@@ -15,13 +15,18 @@ id_inicial = 1
 
 @app.post("/create", response_model=Produto, status_code=status.HTTP_201_CREATED, tags=["Produtos"])
 def create_product(produto: Produto):
-    global id_inicial
-    produto.id = id_inicial
+    if not produto.name or not produto.descricao:
+        raise HTTPException(status_code=400, detail="Nome e descricao nao podem ser vazios")
+    elif produto.price <= 0:
+        raise HTTPException(status_code=400, detail="O preco do produto deve ser maior que 0")
+    else:
+        global id_inicial
+        produto.id = id_inicial
 
-    data.append(produto)
+        data.append(produto)
 
-    id_inicial += 1
-    return produto
+        id_inicial += 1
+        return produto
 
 @app.get("/itens", response_model=list[Produto], status_code=status.HTTP_200_OK, tags=["Produtos"])
 def read_products():
