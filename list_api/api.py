@@ -1,20 +1,40 @@
 from typing import Optional
 from fastapi import FastAPI, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-app = FastAPI()
+app = FastAPI(
+    title="Estudo de FastApi",
+    description="""Api para gestao de produtos
+    
+    Funcionalidades:
+
+    - Listagem de produtos
+    - Criacao de produtos
+    - Atualizacao de produtos
+    - Remocao de produtos
+    """
+)
 
 class Produto(BaseModel):
-    id: Optional[int] = None
-    name: str
-    price: float
-    descricao: str
+    id: Optional[int] = Field(None, description="Primary key")
+    name: str = Field(..., example="Cadeira Gamer", description="Nome completo do item")
+    price: float = Field(..., example="23.90", description="Preço unitário em Reais")
+    descricao: str = Field(..., example="Cadeira Gamer Kabum GMR", description="Especificacoes tecnicas")
 
 data = []
 id_inicial = 1
 
 @app.post("/create", response_model=Produto, status_code=status.HTTP_201_CREATED, tags=["Produtos"])
 def create_product(produto: Produto):
+    """
+        Cria um novo produto.
+
+        - **name** : Passe uma string valida
+        - **price**: Passe um valor de venda maior que 0
+        - **descricao**: Passe uma string valida
+
+        - **Retorno**: Retorna **201** caso o recurso seja criado, ou **400** caso alguns dos requisitos nao tenha sido atingido
+    """
     if not produto.name or not produto.descricao:
         raise HTTPException(status_code=400, detail="Nome e descricao nao podem ser vazios")
     elif produto.price <= 0:
@@ -30,10 +50,19 @@ def create_product(produto: Produto):
 
 @app.get("/itens", response_model=list[Produto], status_code=status.HTTP_200_OK, tags=["Produtos"])
 def read_products():
+    """
+        Devolve ao usuario a lista completa de produtos cadastrados.
+    """
     return data
 
 @app.delete("/itens/delete/{id}", response_model=Produto, status_code=status.HTTP_200_OK, tags=["Produtos"])
 def delete_product(id: int):
+    """
+    Exclui um produto.
+    
+    - **id**: Passe o ID numérico do produto que deseja deletar.
+    - **Retorno**: Confirmação da exclusao ou erro 404 caso não exista.
+    """
     for produto in data:
         if produto.id == id:
             data.remove(produto)
@@ -43,6 +72,12 @@ def delete_product(id: int):
         
 @app.put("/itens/update/{id}", response_model=Produto, status_code=status.HTTP_200_OK, tags=["Produtos"])
 def update_product(id: int, produto_atualizado: Produto):
+    """
+    Atualiza um produto existente um produto.
+    
+    - **id**: Passe o ID numérico do produto que deseja deletar.
+    - **Retorno**: Retorna o produto atualizado ou erro **404** caso não exista ou **400** caso alguns dos requisitos nao tenha sido atingido.
+    """
     for produto in data:
         if produto.id == id:
             if not produto_atualizado.name or not produto_atualizado.descricao:
